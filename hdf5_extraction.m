@@ -16,42 +16,24 @@ stack = [];
 
 % h5disp('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5');
 
-count = 1;
-for i = 0:210
-    if ~mod(i,10)
-        if ~mod(i, 1)
-            range(count) = i/10;
-            count = count+1;
-        end
-    end
+v = VideoWriter('test.avi', 'Grayscale AVI');
+open(v)
+
+for i = 1:209
     
-end
-
-for i = 220:10:1000
-    range(count) = i/10;
-    count = count+1;
-end
-
-
-for i = 1:length(range)
-    
-    frame_name = ['/ImageFrame_1_1_1_', num2str(range(i))];
+    frame_name = ['/ImageFrame_1_1_1_', num2str(i)];
     
     frame_data = h5read('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5', frame_name);
 
     % extract and reformat the data
     gray_frame = frame_data(2,:,:);
     gray_frame = squeeze(gray_frame);
-    imshow(gray_frame);
+%     imshow(gray_frame);
 
+
+    writeVideo(v, gray_frame);
 
     stack(:,:,i) = gray_frame;
 end
 
-% move first dimension to the back
-% color_frame = permute(frame_data, [2 3 1]);
-% imshow(color_frame);
-% 
-% gray_frame = im2gray(color_frame);
-% imshow(gray_frame);
-
+close(v)
