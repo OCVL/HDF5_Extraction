@@ -16,23 +16,26 @@ stack = [];
 
 % h5disp('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5');
 
-count = 0;
-for i = 1:1000
-    if i <= 210
-        if ~mod(i,10)
-            if ~mod(i, 1)
-                i = i/10;
-            end
+count = 1;
+for i = 0:210
+    if ~mod(i,10)
+        if ~mod(i, 1)
+            range(count) = i/10;
+            count = count+1;
         end
-    else
-        % need to figure out how to get rid of the ones place when
-        % modulating I guess
-        print("help")
     end
-    range(count) = i;
-    count = count+1;
     
-    frame_name = ['/ImageFrame_1_1_1_', num2str(i)];
+end
+
+for i = 220:10:1000
+    range(count) = i/10;
+    count = count+1;
+end
+
+
+for i = 1:length(range)
+    
+    frame_name = ['/ImageFrame_1_1_1_', num2str(range(i))];
     
     frame_data = h5read('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5', frame_name);
 
