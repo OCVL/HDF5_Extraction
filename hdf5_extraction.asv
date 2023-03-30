@@ -15,6 +15,9 @@ stack = zeros(480,640,'uint16');
 %% load in the file
 
 % h5disp('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5');
+% 
+% v = VideoWriter('test.avi', 'Grayscale AVI');
+% open(v)
 
 t = Tiff('testing.tif', 'w');
 
@@ -26,6 +29,7 @@ tagstruct.Compression = Tiff.Compression.None;
 tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
 tagstruct.Photometric = Tiff.Photometric.MinIsBlack; 
 
+% setTag(t,tagstruct);
 
 for i = 0:209
     
@@ -46,10 +50,14 @@ for i = 0:209
     lsb = squeeze(lsb);
 
     gray_frame = msb + lsb;
-    gray_frame = rot90(gray_frame, 3);
+    gray_frame = rot90(gray_frame);
+%     imshow(gray_frame);
+
+
+%     writeVideo(v, gray_frame);
 
     stack(:,:,i+1) = gray_frame;
-
+%     write(t, gray_frame);
 end
 
 
@@ -61,6 +69,11 @@ for ii=1:size(stack,3)
 end
 close(t)
 
+% for x = 1:length(stack)
+%         imwrite(stack(:,:,:,x),'All_frames.tif', 'Compression', 'none','WriteMode', "append");
+% end
+
+% close(v)
 
 
 
