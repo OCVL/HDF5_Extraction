@@ -6,9 +6,9 @@
 % grayscale AVIs
 
 
-clear all
-close all
-clc
+% clear all
+% close all
+% clc
 
 stack = zeros(480,640,'uint16');
 
@@ -37,15 +37,21 @@ for i = 0:209
     
     frame_data = h5read('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5', frame_name);
     frame_data = im2uint16(frame_data);
+    
 
     % extract and reformat the data
     msb = frame_data(1,:,:);
     msb = squeeze(msb);
+%     msb = (msb - 8);
+%     msb = msb / 256;
+    
     msb = (msb - 8);
     msb = msb * 256;
     
     lsb = frame_data(2,:,:);
     lsb = squeeze(lsb);
+%     lsb = (lsb - 8);
+%     lsb = lsb / 256;
     
     gray_frame = msb + lsb;
     gray_frame = rot90(gray_frame);
@@ -73,3 +79,34 @@ close(t);
 % end
 
 % close(v)
+
+
+%%
+
+
+stack = zeros(480,640,'uint16');
+
+
+for i = 0:209
+    
+    frame_name = ['/ImageFrame_1_1_1_', num2str(i)];
+    
+    frame_data = h5read('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5', frame_name);
+%     frame_data = im2uint16(frame_data);
+    
+
+    % extract and reformat the data
+    g = frame_data(1,:,:);
+    g = squeeze(g);
+    
+    r = frame_data(2,:,:);
+    r = squeeze(r);
+
+    
+    combined = r * 256 + g;
+    combined = rot90(combined);
+    combined = floor(combined / 2);
+    imshow(combined);
+
+end
+
