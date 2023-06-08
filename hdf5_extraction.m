@@ -24,6 +24,14 @@ for file=filelist'
 
     fPath = fullfile(thisfolder, file{1});
     
+    % get and print out the session notes from the file
+    notes_data = h5read(fPath, '/Notes');       
+    notes_string = convertCharsToStrings(notes_data.Value);
+    notes_split = notes_string.split('"');
+    notes_field = notes_split(12);
+    
+    disp(notes_field);
+    
     % for loop to go through eyes
     for a = 0:1
     
@@ -73,7 +81,7 @@ for file=filelist'
             % 7 second vid = 209 (210 frames)
             % 10 second vid = 299 (300 frames)
             for c = 0:numfrms-1
-                c  
+                c;  
                 frame_name = ['/ImageFrame_', num2str(a), '_1_', num2str(b), '_', num2str(c)];
     
                 % read in the frame data and convert to uint16
