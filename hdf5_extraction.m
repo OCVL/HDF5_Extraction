@@ -54,36 +54,46 @@ for file=filelist'
             end
             
             
-            % initialize everything needed to write the tiff stack
-            file_name = [eye, '_', vid, '.tif'];
-            t = Tiff(file_name, 'w');
-            tagstruct.ImageLength = 480;
-            tagstruct.ImageWidth = 640;
-            tagstruct.BitsPerSample = 16;
-            tagstruct.SamplesPerPixel = 1;
-            tagstruct.Compression = Tiff.Compression.None;
-            tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-            tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+            
             
     
             meta_name = ['/ScanMetaData_', num2str(a), '_1_', num2str(b)];
     
-            frm_metadata = h5read(fPath, meta_name);
+            try
+                frm_metadata = h5read(fPath, meta_name);
 
-            datcontents=cellstr(frm_metadata.Data');
-            valcontents=cellstr(frm_metadata.Value');
-            
-            countind = find(startsWith(datcontents,'FrameCount'));
+                datcontents=cellstr(frm_metadata.Data');
+                valcontents=cellstr(frm_metadata.Value');
 
-            numfrms = str2double(valcontents{countind});
+                countind = find(startsWith(datcontents,'FrameCount'));
+
+                numfrms = str2double(valcontents{countind});
+                                
+                % initialize everything needed to write the tiff stack
+                file_name = [eye, '_', vid, '.tif'];
+                t = Tiff(file_name, 'w');
+                tagstruct.ImageLength = 480;
+                tagstruct.ImageWidth = 640;
+                tagstruct.BitsPerSample = 16;
+                tagstruct.SamplesPerPixel = 1;
+                tagstruct.Compression = Tiff.Compression.None;
+                tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+                tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+                
+            catch
+                % if the video doesn't exist move to the next possibility
+                continue;
+            end
     
             % for loop to go through each frame
             % 7 second vid = 209 (210 frames)
             % 10 second vid = 299 (300 frames)
             for c = 0:numfrms-1
+
                 c;  
+                
                 frame_name = ['/ImageFrame_', num2str(a), '_1_', num2str(b), '_', num2str(c)];
-    
+
                 % read in the frame data and convert to uint16
                 frame_data = h5read(fPath, frame_name);
                 frame_data = uint16(frame_data);
