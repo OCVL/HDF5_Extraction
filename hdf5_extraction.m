@@ -15,7 +15,7 @@ stack = zeros(480,640,'uint16');
 
 %% load in the file
 
-% h5disp('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5');
+% h5disp('fef748ff-4fb2-4bcf-958b-eef4bf765240.hdf5');
 
 % for loop to go through eyes
 for a = 0:1
@@ -36,6 +36,7 @@ for a = 0:1
             vid = 'vid_2';
         end
         
+        
         % initialize everything needed to write the tiff stack
         file_name = [eye, '_', vid, '.tif'];
         t = Tiff(file_name, 'w');
@@ -48,12 +49,14 @@ for a = 0:1
         tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
         
         % for loop to go through each frame
-        for c = 0:209
+        % 7 second vid = 209 (210 frames)
+        % 10 second vid = 299 (300 frames)
+        for c = 0:299
               
             frame_name = ['/ImageFrame_', num2str(a), '_1_', num2str(b), '_', num2str(c)];
 
             % read in the frame data and convert to uint16
-            frame_data = h5read('2529f11b-6c60-4bd9-b580-f37d9665ca65.hdf5', frame_name);
+            frame_data = h5read('0e272883-2721-4ddd-98d3-b3f032f1ba31.hdf5', frame_name);
             frame_data = uint16(frame_data);
 
 
