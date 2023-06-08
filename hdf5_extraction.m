@@ -21,13 +21,14 @@ thisfolder = uigetdir(thisfolder, 'Select the folder containing the CLight hdf5 
 
 % h5disp('fef748ff-4fb2-4bcf-958b-eef4bf765240.hdf5');
 for file=filelist'
-
+    
+    ftgray=[];
     fPath = fullfile(thisfolder, file{1});
     
     % for loop to go through eyes
     for a = 0:1
     
-        stack = zeros(480,640,'uint16');
+        stack = zeros(448,640,'uint16');
         
         if a == 0
             eye = 'OD';
@@ -93,9 +94,51 @@ for file=filelist'
     
                 gray_frame = msb + lsb;
                 gray_frame = rot90(gray_frame, -1);
-    
+
+                frm_size = size(gray_frame);
+                %padim = double(gray_frame).*(kaiser(size(gray_frame,1))*kaiser(size(gray_frame,2))');
+                padim = padarray(gray_frame, size(gray_frame), 0,'post');
+                
+                % Design a notch filter.
+                r = 0:87:size(padim,2);                
+                midind = ceil(length(r)/2);
+                r = r-r(midind);
+                r = [r(1:(midind-1)) r((midind+1):end)];
+
+                noiseangle = 34;
+
+                th = repmat(-noiseangle*(pi/180), 1, length(r));
+
+                [notchx, notchy] = pol2cart(th, r);
+                notchx = notchx+ceil(size(padim,2)/2)+1;
+                notchy = notchy+ceil(size(padim,1)/2)+1;
+
+                notchfilter = ones(size(padim));
+                notchfilter(sub2ind(size(notchfilter), round(notchy), round(notchx))) = 0;
+                notchfilter=imerode(notchfilter, strel('disk',10, 0));
+                notchfilter = imgaussfilt(notchfilter,2);
+
+
+                ftgray(:,:,c+1)=fftshift(fft2(padim)).*notchfilter;
+                figure(1);
+                clf;
+                imagesc(log10(abs(mean(ftgray,3)).^2)); colormap gray; hold on;
+%                 plot(notchx, notchy, 'r*');
+                drawnow;
+
+                figure(2);
+                subplot(1,2,1);
+                imagesc(gray_frame); colormap gray;
+                
+
+                gray_frame = real(ifft2(ifftshift(ftgray(:,:,c+1))));
+                gray_frame = gray_frame(1:frm_size(1),1:frm_size(2));
+                subplot(1,2,2);
+                imagesc( gray_frame ); colormap gray;
+
+                pause(0.01);
                 % add frame to stack
-                stack(:,:,c+1) = gray_frame;
+                stack(:,:,c+1) = gray_frame(33:end,:);
     
             end
             % write the tiff stack
