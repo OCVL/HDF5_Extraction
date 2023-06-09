@@ -17,6 +17,18 @@ thisfolder = uigetdir(thisfolder, 'Select the folder containing the CLight hdf5 
     
 [filelist]=read_folder_contents(thisfolder, 'hdf5');
 
+% get unix timestamps for each file
+for i=1:length(filelist)
+    fPath = fullfile(thisfolder, filelist{i});
+    meta_data = h5read(fPath, '/ImagingSessionMetaData');
+    time_stamp = str2double(convertCharsToStrings(meta_data.Value(1:17,1)));
+    filelist{i,2} = time_stamp;
+end
+
+% sort filelist based on timestamps
+filelist = sortrows(filelist,2);
+
+
 %% load in the files
 
 % h5disp('fef748ff-4fb2-4bcf-958b-eef4bf765240.hdf5');
@@ -25,13 +37,20 @@ for file=filelist'
     ftgray=[];
     fPath = fullfile(thisfolder, file{1});
     
+    try
     % get and print out the session notes from the file
-    notes_data = h5read(fPath, '/Notes');       
+    notes_data = h5read(fPath, '/Notes');
     notes_string = convertCharsToStrings(notes_data.Value);
     notes_split = notes_string.split('"');
     notes_field = notes_split(12);
-    
-    disp(notes_field);
+    notes_field_split = notes_field.split("_");
+    subject_id = notes_field_split(1);
+    fixation_location_px = notes_field_split(2);
+   
+    catch
+        warning('Notes field failed for file: %s', fPath);
+        continue;
+    end
     
     % for loop to go through eyes
     for a = 0:1
