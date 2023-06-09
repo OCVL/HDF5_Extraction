@@ -7,7 +7,7 @@
 
 
 clear all
-close all
+close all force
 clc
 
 % known pixel values corresponding to fixation target locaitons
@@ -126,7 +126,7 @@ for file=filelist'
                 file_name = [subject_id, '_', string(date), '_', eye, '_', fixation_location_deg, '_', num2str(vid_count), '.tif'];
                 file_name = strjoin(file_name, '');
                 t = Tiff(file_name, 'w');
-                tagstruct.ImageLength = 480;
+                tagstruct.ImageLength = 448;
                 tagstruct.ImageWidth = 640;
                 tagstruct.BitsPerSample = 16;
                 tagstruct.SamplesPerPixel = 1;
@@ -166,10 +166,69 @@ for file=filelist'
                 gray_frame = rot90(gray_frame, -1);
 
                 % add frame to stack
-                stack(:,:,c+1) = gray_frame(33:end,:);
-    
+                stack(:,:,c+1) = gray_frame(33:end,:);    
             end
-            % write the tiff stack
+            
+            %% Filter out scanner salt/pepper with an adaptive filter.
+            [threshes] = quantile(stack(:),[0.005, 0.995]);
+            
+            for c = 1:numfrms
+                frm=stack(:,:,c);
+                
+                blurinds = find(frm < threshes(1))'; % | frm > threshes(2))';
+                blurinds = [blurinds find( frm > threshes(2))'];
+                figure(1);
+                subplot(1,2,1);
+                imagesc(frm); colormap gray; axis image;
+                
+                for i=blurinds
+                    up = i-1;
+                    down = i+1;
+                    left = i-size(frm,1);
+                    right = i+size(frm,1);
+                    
+%                     [ii,jj]=ind2sub(size(frm),i);
+%                     if ii==189 && jj== 407
+%                        ii 
+%                     end
+%                     [ii,jj]=ind2sub(size(frm),up)
+%                     [ii,jj]=ind2sub(size(frm),down)
+%                     [ii,jj]=ind2sub(size(frm),right)
+%                     [ii,jj]=ind2sub(size(frm),left)
+                    
+                    frm(i)=0;
+                    num=0;
+                    
+                    if up > 1 && frm(up) > threshes(1) && frm(up) < threshes(2)
+                        frm(i) = frm(i)+frm(up);
+                        num=num+1;
+                    end                    
+                    if down < mod(i,size(frm,1)) && frm(down) > threshes(1) && frm(down) < threshes(2)
+                        frm(i) = frm(i)+frm(down);
+                        num=num+1;
+                    end
+                    if left > 1 && frm(left) > threshes(1) && frm(left) < threshes(2)
+                        frm(i) = frm(i)+frm(left);
+                        num=num+1;
+                    end
+                    if right < length(frm(:)) && frm(right) > threshes(1) && frm(right) < threshes(2)
+                        frm(i) = frm(i)+frm(right);
+                        num=num+1;
+                    end
+                    
+                    frm(i) = frm(i)/num;                                        
+                end
+                
+                stack(:,:,c)=frm;
+                
+                subplot(1,2,2);
+                imagesc(stack(:,:,c)); colormap gray; axis image;
+                drawnow;
+               
+                
+            end
+            
+            %% write the tiff stack
             for ii=1:size(stack,3)
                setTag(t,tagstruct);
                write(t,stack(:,:,ii));
