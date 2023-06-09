@@ -57,10 +57,12 @@ for file=filelist'
     notes_field_split = notes_field.split("_");
     subject_id = notes_field_split(1);
     fixation_location_px = notes_field_split(2);
+    notes_success = 1;
    
     catch
         warning('Notes field failed for file: %s', fPath);
-        continue;
+        fixation_location_px = center; % this value doesn't matter if notes failed - center selected arbitrarily
+        notes_success = 0;
     end
     
     % for loop to go through eyes
@@ -123,8 +125,16 @@ for file=filelist'
                 numfrms = str2double(valcontents{countind});
                                 
                 % initialize everything needed to write the tiff stack
-                file_name = [subject_id, '_', string(date), '_', eye, '_', fixation_location_deg, '_', num2str(vid_count), '.tif'];
-                file_name = strjoin(file_name, '');
+                if(notes_success)
+                    file_name = [subject_id, '_', string(date), '_', eye, '_', fixation_location_deg, '_', num2str(vid_count), '.tif'];
+                    file_name = strjoin(file_name, '');
+                else
+                    % if notes extraction failed, revert to generic naming
+                    % convention
+                    file_name = [string(date), '_', eye, '_', num2str(vid_count), '.tif'];
+                    file_name = strjoin(file_name, '');
+                end
+                    
                 t = Tiff(file_name, 'w');
                 tagstruct.ImageLength = 448;
                 tagstruct.ImageWidth = 640;
@@ -136,7 +146,8 @@ for file=filelist'
                 
             catch
                 % if the video doesn't exist move to the next possibility
-                warning("video doesn't exist");
+%                 warning("video doesn't exist");
+                vid_count = vid_count - 1;
                 continue;
             end
     
