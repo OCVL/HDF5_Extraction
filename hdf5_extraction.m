@@ -25,13 +25,20 @@ for file=filelist'
     ftgray=[];
     fPath = fullfile(thisfolder, file{1});
     
+    try
     % get and print out the session notes from the file
-    notes_data = h5read(fPath, '/Notes');       
+    notes_data = h5read(fPath, '/Notes');
     notes_string = convertCharsToStrings(notes_data.Value);
     notes_split = notes_string.split('"');
     notes_field = notes_split(12);
-    
-    disp(notes_field);
+    notes_field_split = notes_field.split("_");
+    subject_id = notes_field_split(1);
+    fixation_location_px = notes_field_split(2);
+   
+    catch
+        warning('Notes field failed for file: %s', fPath);
+        continue;
+    end
     
     % for loop to go through eyes
     for a = 0:1
