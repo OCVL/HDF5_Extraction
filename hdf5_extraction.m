@@ -10,17 +10,18 @@ clear all
 close all
 clc
 
-datetime.setDefaultFormats('default', 'yyyyMMdd');
-
-vid_count = -1;
-
+% known pixel values corresponding to fixation target locaitons
 right_edge = "300";
 left_edge = "950";
 center = "642";
 
+% set default date format
+datetime.setDefaultFormats('default', 'yyyyMMdd');
+
+% initialize video number variable
+vid_count = -1;
 
 % initialize the stack matrix
-
 thisfolder = pwd;
 thisfolder = uigetdir(thisfolder, 'Select the folder containing the CLight hdf5 data.');
     
@@ -40,7 +41,6 @@ filelist = sortrows(filelist,2);
 
 %% load in the files
 
-% h5disp('fef748ff-4fb2-4bcf-958b-eef4bf765240.hdf5');
 for file=filelist'
     
     ftgray=[];
@@ -49,11 +49,11 @@ for file=filelist'
     date = datetime(fstruct.date);
     
     try
-    % get and print out the session notes from the file
+    % get notes from the file
     notes_data = h5read(fPath, '/Notes');
     notes_string = convertCharsToStrings(notes_data.Value);
     notes_split = notes_string.split('"');
-    notes_field = notes_split(12);
+    notes_field = notes_split(12); % if the correct notes entry is a second notes entry the number should be 32
     notes_field_split = notes_field.split("_");
     subject_id = notes_field_split(1);
     fixation_location_px = notes_field_split(2);
@@ -109,10 +109,7 @@ for file=filelist'
                 vid_count = vid_count + 1;
             end
             
-            
-            
-            
-    
+              
             meta_name = ['/ScanMetaData_', num2str(a), '_1_', num2str(b)];
     
             try
@@ -126,7 +123,8 @@ for file=filelist'
                 numfrms = str2double(valcontents{countind});
                                 
                 % initialize everything needed to write the tiff stack
-                file_name = [subject_id, '_', date, '_', eye, '_', fixation_location_deg, '_', vid_count, '.tif'];
+                file_name = [subject_id, '_', string(date), '_', eye, '_', fixation_location_deg, '_', num2str(vid_count), '.tif'];
+                file_name = strjoin(file_name, '');
                 t = Tiff(file_name, 'w');
                 tagstruct.ImageLength = 480;
                 tagstruct.ImageWidth = 640;
@@ -138,12 +136,11 @@ for file=filelist'
                 
             catch
                 % if the video doesn't exist move to the next possibility
+                warning("video doesn't exist");
                 continue;
             end
     
             % for loop to go through each frame
-            % 7 second vid = 209 (210 frames)
-            % 10 second vid = 299 (300 frames)
             for c = 0:numfrms-1
 
                 c;  
