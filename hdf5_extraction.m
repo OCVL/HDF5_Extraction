@@ -10,6 +10,13 @@ clear all
 close all
 clc
 
+vid_count = -1;
+
+right_edge = "300";
+left_edge = "950";
+center = "642";
+
+
 % initialize the stack matrix
 
 thisfolder = pwd;
@@ -59,18 +66,43 @@ for file=filelist'
         
         if a == 0
             eye = 'OD';
+            switch fixation_location_px
+                case right_edge
+                    fixation_location_deg = "4T";
+                case left_edge
+                    fixation_location_deg = "4N";
+                case center
+                    fixation_location_deg = "0";
+                otherwise
+                    warning("fixation location from notes field is not valid for file: %s", fPath);
+                    continue;
+            end
         else
             eye = 'OS';
+            switch fixation_location_px
+                case right_edge
+                    fixation_location_deg = "4N";
+                case left_edge
+                    fixation_location_deg = "4T";
+                case center
+                    fixation_location_deg = "0";
+                otherwise
+                    warning("fixation location from notes field is not valid for file: %s", fPath);
+                    continue;
+            end
         end
         
         % for loop to go through video number
         for b = 0:2
             if b == 0
                 vid = 'vid_0';
+                vid_count = vid_count + 1;
             elseif b == 1
                 vid = 'vid_1';
+                vid_count = vid_count + 1;
             else
                 vid = 'vid_2';
+                vid_count = vid_count + 1;
             end
             
             
@@ -90,7 +122,7 @@ for file=filelist'
                 numfrms = str2double(valcontents{countind});
                                 
                 % initialize everything needed to write the tiff stack
-                file_name = [eye, '_', vid, '.tif'];
+                file_name = [subject_id, '_', eye, '_', fixation_location_deg, '_', vid_count, '.tif'];
                 t = Tiff(file_name, 'w');
                 tagstruct.ImageLength = 480;
                 tagstruct.ImageWidth = 640;
