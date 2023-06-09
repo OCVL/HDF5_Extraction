@@ -10,6 +10,8 @@ clear all
 close all
 clc
 
+datetime.setDefaultFormats('default', 'yyyyMMdd');
+
 vid_count = -1;
 
 right_edge = "300";
@@ -43,6 +45,8 @@ for file=filelist'
     
     ftgray=[];
     fPath = fullfile(thisfolder, file{1});
+    fstruct = dir(fPath);
+    date = datetime(fstruct.date);
     
     try
     % get and print out the session notes from the file
@@ -122,7 +126,7 @@ for file=filelist'
                 numfrms = str2double(valcontents{countind});
                                 
                 % initialize everything needed to write the tiff stack
-                file_name = [subject_id, '_', eye, '_', fixation_location_deg, '_', vid_count, '.tif'];
+                file_name = [subject_id, '_', date, '_', eye, '_', fixation_location_deg, '_', vid_count, '.tif'];
                 t = Tiff(file_name, 'w');
                 tagstruct.ImageLength = 480;
                 tagstruct.ImageWidth = 640;
