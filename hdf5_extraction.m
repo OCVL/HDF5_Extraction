@@ -145,10 +145,10 @@ for file=filelist'
                 msb = msb * 256;
                 gray_frame = msb + lsb;
                 
-                gray_frame = rot90(gray_frame, -1); % need to rotate, otherwise sideways image
+                gray_frame = rot90(gray_frame, 1); % need to rotate, otherwise sideways image
 
                 % add frame to stack
-                stack(:,:,c+1) = gray_frame(33:end,:); % get rid of the first 32 to avoid scanner blur from top of images
+                stack(:,:,c+1) = gray_frame(1:size(gray_frame,1)-32,:); % get rid of the first 32 to avoid scanner blur from top of images
             end
            
             
