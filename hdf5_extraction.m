@@ -131,7 +131,8 @@ for file=filelist'
                 
                 frame_name = ['/ImageFrame_', num2str(a), '_1_', num2str(b), '_', num2str(c)];
 
-                % read in the frame data and convert to uint16
+                % read in the frame data and convert to uint16 - data is 11
+                % bits so it needs to be formatted for 16 to not lose any
                 frame_data = h5read(fPath, frame_name);
                 frame_data = uint16(frame_data);
     
@@ -147,70 +148,12 @@ for file=filelist'
                 lsb = squeeze(lsb);
     
                 gray_frame = msb + lsb;
-                gray_frame = rot90(gray_frame, -1);
+                gray_frame = rot90(gray_frame, -1); % need to rotate, otherwise sideways image
 
                 % add frame to stack
-                stack(:,:,c+1) = gray_frame(33:end,:);    
+                stack(:,:,c+1) = gray_frame(33:end,:);
             end
-            
-            %% Filter out scanner salt/pepper with an adaptive filter.
-            [threshes] = quantile(stack(:),[0.005, 0.995]);
-            
-            for c = 1:numfrms
-                frm=stack(:,:,c);
-                
-                blurinds = find(frm < threshes(1))'; % | frm > threshes(2))';
-                blurinds = [blurinds find( frm > threshes(2))'];
-                figure(1);
-                subplot(1,2,1);
-                imagesc(frm); colormap gray; axis image;
-                
-                for i=blurinds
-                    up = i-1;
-                    down = i+1;
-                    left = i-size(frm,1);
-                    right = i+size(frm,1);
-                    
-%                     [ii,jj]=ind2sub(size(frm),i);
-%                     if ii==189 && jj== 407
-%                        ii 
-%                     end
-%                     [ii,jj]=ind2sub(size(frm),up)
-%                     [ii,jj]=ind2sub(size(frm),down)
-%                     [ii,jj]=ind2sub(size(frm),right)
-%                     [ii,jj]=ind2sub(size(frm),left)
-                    
-                    frm(i)=0;
-                    num=0;
-                    
-                    if up > 1 && frm(up) > threshes(1) && frm(up) < threshes(2)
-                        frm(i) = frm(i)+frm(up);
-                        num=num+1;
-                    end                    
-                    if down < mod(i,size(frm,1)) && frm(down) > threshes(1) && frm(down) < threshes(2)
-                        frm(i) = frm(i)+frm(down);
-                        num=num+1;
-                    end
-                    if left > 1 && frm(left) > threshes(1) && frm(left) < threshes(2)
-                        frm(i) = frm(i)+frm(left);
-                        num=num+1;
-                    end
-                    if right < length(frm(:)) && frm(right) > threshes(1) && frm(right) < threshes(2)
-                        frm(i) = frm(i)+frm(right);
-                        num=num+1;
-                    end
-                    
-                    frm(i) = frm(i)/num;                                        
-                end
-                
-                stack(:,:,c)=frm;
-                
-                subplot(1,2,2);
-                imagesc(stack(:,:,c)); colormap gray; axis image;
-                drawnow;
-               
-                
-            end
+           
             
             %% write the tiff stack
             for ii=1:size(stack,3)
