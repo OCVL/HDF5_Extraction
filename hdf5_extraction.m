@@ -10,11 +10,6 @@ clear all
 close all force
 clc
 
-% known pixel values corresponding to fixation target locaitons
-right_edge = "300";
-left_edge = "950";
-center = "642";
-
 % set default date format
 datetime.setDefaultFormats('default', 'yyyyMMdd');
 
@@ -49,19 +44,19 @@ for file=filelist'
     date = datetime(fstruct.date);
     
     try
-    % get notes from the file
-    notes_data = h5read(fPath, '/Notes');
-    notes_string = convertCharsToStrings(notes_data.Value);
-    notes_split = notes_string.split('"');
-    notes_field = notes_split(12); % if the correct notes entry is a second notes entry the number should be 32
-    notes_field_split = notes_field.split("_");
-    subject_id = notes_field_split(1);
-    fixation_location_px = notes_field_split(2);
-    notes_success = 1;
+        % get notes from the file
+        notes_data = h5read(fPath, '/Notes');
+        notes_string = convertCharsToStrings(notes_data.Value);
+        notes_split = notes_string.split('"');
+        notes_field = notes_split(12); % if the correct notes entry is a second notes entry the number should be 32
+        subject_id = notes_field; % if there is also a fixation target offset written in the notes ("idnum_pxloc") it will be grouped with the id here
+
+        notes_success = 1;
    
     catch
+        % if there was something wrong with the notes field or if there
+        % were no notes
         warning('Notes field failed for file: %s', fPath);
-        fixation_location_px = center; % this value doesn't matter if notes failed - center selected arbitrarily
         notes_success = 0;
     end
     
@@ -72,30 +67,8 @@ for file=filelist'
         
         if a == 0
             eye = 'OD';
-            switch fixation_location_px
-                case right_edge
-                    fixation_location_deg = "4T";
-                case left_edge
-                    fixation_location_deg = "4N";
-                case center
-                    fixation_location_deg = "0";
-                otherwise
-                    warning("fixation location from notes field is not valid for file: %s", fPath);
-                    continue;
-            end
         else
             eye = 'OS';
-            switch fixation_location_px
-                case right_edge
-                    fixation_location_deg = "4N";
-                case left_edge
-                    fixation_location_deg = "4T";
-                case center
-                    fixation_location_deg = "0";
-                otherwise
-                    warning("fixation location from notes field is not valid for file: %s", fPath);
-                    continue;
-            end
         end
         
         % for loop to go through video number
@@ -126,12 +99,12 @@ for file=filelist'
                                 
                 % initialize everything needed to write the tiff stack
                 if(notes_success)
-                    file_name = [subject_id, '_', string(date), '_', eye, '_', fixation_location_deg, '_', num2str(vid_count), '.tif'];
+                    file_name = [thisfolder, '\', subject_id, '_', string(date), '_', eye, '_', num2str(vid_count), '.tif'];
                     file_name = strjoin(file_name, '');
                 else
                     % if notes extraction failed, revert to generic naming
                     % convention
-                    file_name = [string(date), '_', eye, '_', num2str(vid_count), '.tif'];
+                    file_name = [thisfolder, '\', string(date), '_', eye, '_', num2str(vid_count), '.tif'];
                     file_name = strjoin(file_name, '');
                 end
                     
