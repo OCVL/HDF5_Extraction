@@ -50,12 +50,16 @@ for file=filelist'
         notes_split = notes_string.split('"');
         notes_field = notes_split(12); % if the correct notes entry is a second notes entry the number should be 32
         subject_id = notes_field; % if there is also a fixation target offset written in the notes ("idnum_pxloc") it will be grouped with the id here
-
         notes_success = 1;
+        
+        if subject_id == 'notes' % if nothing was written in the notes
+            warning('No notes recorded in notes field of HDF5 data: %s', fPath);
+            notes_success = 0;
+        end
+        
    
     catch
-        % if there was something wrong with the notes field or if there
-        % were no notes
+        % if there was something wrong with the notes field
         warning('Notes field failed for file: %s', fPath);
         notes_success = 0;
     end
@@ -73,18 +77,9 @@ for file=filelist'
         
         % for loop to go through video number
         for b = 0:2
-            if b == 0
-                vid = 'vid_0';
-                vid_count = vid_count + 1;
-            elseif b == 1
-                vid = 'vid_1';
-                vid_count = vid_count + 1;
-            else
-                vid = 'vid_2';
-                vid_count = vid_count + 1;
-            end
-            
-              
+
+            vid_count = vid_count + 1; % keep track of the video number
+     
             meta_name = ['/ScanMetaData_', num2str(a), '_1_', num2str(b)];
     
             try
@@ -137,21 +132,23 @@ for file=filelist'
                 frame_data = uint16(frame_data);
     
     
-                % extract and reformat the data
+                % extract data
                 msb = frame_data(1,:,:);
                 msb = squeeze(msb);
-    
-                msb = (msb - 8);
-                msb = msb * 256;
-    
                 lsb = frame_data(2,:,:);
                 lsb = squeeze(lsb);
     
+                
+                %operations on data to be able to combine most and least
+                %significant bits properly
+                msb = (msb - 8);
+                msb = msb * 256;
                 gray_frame = msb + lsb;
+                
                 gray_frame = rot90(gray_frame, -1); % need to rotate, otherwise sideways image
 
                 % add frame to stack
-                stack(:,:,c+1) = gray_frame(33:end,:);
+                stack(:,:,c+1) = gray_frame(33:end,:); % get rid of the first 32 to avoid scanner blur from top of images
             end
            
             
