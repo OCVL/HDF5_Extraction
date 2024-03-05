@@ -67,7 +67,7 @@ for file=filelist'
     % for loop to go through eyes
     for a = 0:1
     
-        stack = zeros(448,640,'uint16');
+        stack = zeros(448,640,'uint16'); % initialize stack to store frames
         
         if a == 0
             eye = 'OD';
@@ -83,14 +83,15 @@ for file=filelist'
             meta_name = ['/ScanMetaData_', num2str(a), '_1_', num2str(b)];
     
             try
+                % get data/information from hdf5 file
                 frm_metadata = h5read(fPath, meta_name);
 
-                datcontents=cellstr(frm_metadata.Data');
-                valcontents=cellstr(frm_metadata.Value');
+                datcontents=cellstr(frm_metadata.Data'); % get content
+                valcontents=cellstr(frm_metadata.Value'); % get content values
 
-                countind = find(startsWith(datcontents,'FrameCount'));
+                countind = find(startsWith(datcontents,'FrameCount')); % get number of frames from meta data
 
-                numfrms = str2double(valcontents{countind});
+                numfrms = str2double(valcontents{countind}); % number of frames as double
                                 
                 % initialize everything needed to write the tiff stack
                 if(notes_success)
@@ -104,7 +105,7 @@ for file=filelist'
                 end
                     
                 t = Tiff(file_name, 'w');
-                tagstruct.ImageLength = 448;
+                tagstruct.ImageLength = 448; % raw image is 480 but we subtract 32 to avoid scanner blur
                 tagstruct.ImageWidth = 640;
                 tagstruct.BitsPerSample = 16;
                 tagstruct.SamplesPerPixel = 1;
@@ -114,15 +115,14 @@ for file=filelist'
                 
             catch
                 % if the video doesn't exist move to the next possibility
-%                 warning("video doesn't exist");
+                % (as in not all 3 videos were taken in a session or it
+                % reached the end of the 3 videos in that session)
                 vid_count = vid_count - 1;
                 continue;
             end
     
             % for loop to go through each frame
             for c = 0:numfrms-1
-
-                c;  
                 
                 frame_name = ['/ImageFrame_', num2str(a), '_1_', num2str(b), '_', num2str(c)];
 
