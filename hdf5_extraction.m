@@ -67,7 +67,7 @@ for file=filelist'
     % for loop to go through eyes
     for a = 0:1
     
-        stack = zeros(448,640,'uint16'); % initialize stack to store frames
+
         
         if a == 0
             eye = 'OD';
@@ -121,6 +121,7 @@ for file=filelist'
                 continue;
             end
     
+            stack = zeros(448,640,'uint16'); % initialize stack to store frames
             % for loop to go through each frame
             for c = 0:numfrms-1
                 
@@ -159,6 +160,19 @@ for file=filelist'
                writeDirectory(t);
             end
             close(t)
+
+            %% write a workable AVI
+            quants = double(quantile(stack(:), [0.005 0.995]));
+            stack = double(stack)-quants(1);
+            stack = stack./(quants(2) - quants(1));
+            stack = uint8(round(stack*255));
+
+            writer = VideoWriter(file_name.replace("tif","avi"), 'Grayscale AVI');
+            open(writer);
+            for ii=1:size(stack,3)
+                writeVideo(writer,stack(:,:,ii));
+            end
+            close(writer);
         end
     end
 end
