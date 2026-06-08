@@ -162,7 +162,7 @@ for file=filelist'
             close(t)
 
             %% write a workable AVI
-            quants = double(quantile(stack(:), [0.005 0.995]));
+            quants = double(quantile(stack(:), [0.001 0.999]));
             stack = double(stack)-quants(1);
             stack = stack./(quants(2) - quants(1));
             stack = uint8(round(stack*255));
