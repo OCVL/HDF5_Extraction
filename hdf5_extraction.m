@@ -64,6 +64,11 @@ for file=filelist'
         notes_success = 0;
     end
     
+    TARGET_HEIGHT = 472;
+    WIDTH = 640;
+    SQUARE_ASPECT = WIDTH/480;
+    TARGET_RESCALED_HEIGHT = round(TARGET_HEIGHT*SQUARE_ASPECT);
+
     % for loop to go through eyes
     for a = 0:1
     
@@ -103,10 +108,12 @@ for file=filelist'
                     file_name = [thisfolder, '\', string(date), '_', eye, '_', num2str(vid_count), '.tif'];
                     file_name = strjoin(file_name, '');
                 end
+
+                file_name = strrep(file_name, ':', '')
                     
                 t = Tiff(file_name, 'w');
-                tagstruct.ImageLength = 448; % raw image is 480 but we subtract 32 to avoid scanner blur
-                tagstruct.ImageWidth = 640;
+                tagstruct.ImageLength = TARGET_RESCALED_HEIGHT; 
+                tagstruct.ImageWidth = WIDTH;
                 tagstruct.BitsPerSample = 16;
                 tagstruct.SamplesPerPixel = 1;
                 tagstruct.Compression = Tiff.Compression.None;
@@ -121,7 +128,7 @@ for file=filelist'
                 continue;
             end
     
-            stack = zeros(448,640,'uint16'); % initialize stack to store frames
+            stack = zeros(TARGET_HEIGHT,WIDTH,'uint16'); % initialize stack to store frames
             % for loop to go through each frame
             for c = 0:numfrms-1
                 
@@ -149,14 +156,14 @@ for file=filelist'
                 gray_frame = rot90(gray_frame, 1); % need to rotate, otherwise sideways image
 
                 % add frame to stack
-                stack(:,:,c+1) = gray_frame(1:size(gray_frame,1)-32,:); % get rid of the first 32 to avoid scanner blur from top of images
+                stack(:,:,c+1) = gray_frame(1:TARGET_HEIGHT,:); % get rid of the first 32 to avoid scanner blur from top of images
             end
            
             
             %% write the tiff stack
             for ii=1:size(stack,3)
                setTag(t,tagstruct);
-               write(t,stack(:,:,ii));
+               write(t, imresize(stack(:,:,ii), [TARGET_RESCALED_HEIGHT, WIDTH ]));
                writeDirectory(t);
             end
             close(t)
@@ -170,7 +177,7 @@ for file=filelist'
             writer = VideoWriter(file_name.replace("tif","avi"), 'Grayscale AVI');
             open(writer);
             for ii=1:size(stack,3)
-                writeVideo(writer,stack(:,:,ii));
+                writeVideo(writer, imresize(stack(:,:,ii), [TARGET_RESCALED_HEIGHT, WIDTH ]));
             end
             close(writer);
         end
