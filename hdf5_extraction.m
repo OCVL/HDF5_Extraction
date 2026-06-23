@@ -99,6 +99,7 @@ for file=filelist'
                 numfrms = str2double(valcontents{countind}); % number of frames as double
                                 
                 % initialize everything needed to write the tiff stack
+                subject_id = strrep(subject_id, ':', '');
                 if(notes_success)
                     file_name = [thisfolder, '\', subject_id, '_', string(date), '_', eye, '_', num2str(vid_count), '.tif'];
                     file_name = strjoin(file_name, '');
@@ -109,7 +110,7 @@ for file=filelist'
                     file_name = strjoin(file_name, '');
                 end
 
-                file_name = strrep(file_name, ':', '')
+                
                     
                 t = Tiff(file_name, 'w');
                 tagstruct.ImageLength = TARGET_RESCALED_HEIGHT; 
