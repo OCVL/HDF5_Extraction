@@ -111,7 +111,7 @@ for file=filelist'
                 end
 
                 
-                    
+                file_name    
                 t = Tiff(file_name, 'w');
                 tagstruct.ImageLength = TARGET_RESCALED_HEIGHT; 
                 tagstruct.ImageWidth = WIDTH;
@@ -130,6 +130,8 @@ for file=filelist'
             end
     
             stack = zeros(TARGET_HEIGHT,WIDTH,'uint16'); % initialize stack to store frames
+            frm_mean = zeros(numfrms,1);
+            frm_stddev = zeros(numfrms,1);
             % for loop to go through each frame
             for c = 0:numfrms-1
                 
@@ -158,8 +160,37 @@ for file=filelist'
 
                 % add frame to stack
                 stack(:,:,c+1) = gray_frame(1:TARGET_HEIGHT,:); % get rid of the first 32 to avoid scanner blur from top of images
+                frm_mean(c+1) = mean(gray_frame(:),'omitnan');
+                frm_stddev(c+1) = std(double(gray_frame(:)));
             end
            
+            % figure(1);
+            % mean_counts = histogram(frm_mean, numfrms/4);            
+            % 
+            % mean_thresh = mean_counts.BinEdges(2);
+            % 
+            % figure(2);
+            % stddev_counts = histogram(frm_stddev, numfrms/4);
+            % stddev_thresh = stddev_counts.BinEdges(2);
+            
+            [mcount, meanedges] =histcounts(frm_mean, numfrms/4);
+            mean_thresh = meanedges(2);
+            [scount, stdedges] =histcounts(frm_stddev, numfrms/4);
+            stddev_thresh = stdedges(2);
+
+            low_frms = stack(:,:, frm_mean < mean_thresh & frm_stddev < stddev_thresh);
+
+            % figure(3);
+            % for f=1:size(low_frms,3)
+            %     clf;
+            %     imagesc(low_frms(:,:,f));
+            %     axis image; colormap gray;
+            % 
+            % end
+
+            avg_low = uint16(mean(low_frms, 3));
+
+            stack = stack-avg_low;
             
             %% write the tiff stack
             for ii=1:size(stack,3)
