@@ -68,8 +68,10 @@ for item in file_info_sorted:
             notes_success = 0
 
         #dimension for the tiff and avi files
-        Target_height = 629
+        Initial_height = 472
         Width = 640
+        square_aspect = Width/480
+        Target_height = round(Initial_height * square_aspect)
 
         #for loop to go through each eye in the scan
         for a in range(2):
@@ -127,7 +129,8 @@ for item in file_info_sorted:
                     # data is 11 bits and must be converted to 16
                     frame_data = f[frame_name][:].astype(np.uint16)
 
-                    msb = frame_data[:, :, 0].astype(np.uint16) - 8
+                    msb = frame_data[:, :, 0].astype(np.uint16)
+                    msb = msb - 8
                     msb = msb * 256
                     lsb = frame_data[:, :, 1].astype(np.uint16)
 
@@ -142,21 +145,36 @@ for item in file_info_sorted:
 
                     stack[:, :, c] = frame_rescaled
 
-                    frm_mean[c] = np.nanmean(gray_frame)
+                    frm_mean[c] = np.mean(gray_frame)
                     frm_stddev[c] = np.std(gray_frame.astype(float))
 
                 #-------------------------------------------------------------------------------------------------------
                 #Need to fix this to correct frames...
-                '''
-                mcount, meanedges = np.histogram(frm_mean, bins=max(1, num_frames // 4))
-                scount, stdedges = np.histogram(frm_stddev, bins=max(1, num_frames // 4))
+                #import matplotlib.pyplot as plt
 
-                mean_thresh = meanedges[1] #if len(meanedges) > 1 else meanedges[0]
-                stddev_thresh = stdedges[1] #if len(stdedges) > 1 else stdedges[0]
+
+                mcount, meanedges = np.histogram(frm_mean, bins= num_frames // 4)
+                mean_thresh = meanedges[1]
+                scount, stdedges = np.histogram(frm_stddev, bins= num_frames // 4)
+                stddev_thresh = stdedges[1]
+
+                low_frames = stack[:, :, (frm_mean < mean_thresh) & (frm_stddev < stddev_thresh)]
+
+                avg_low = np.mean(low_frames,2).astype(np.uint16)
+                stack = stack - avg_low[:, :, None]
+
+                #commented out
+                '''
+                #matplotlib - load frm_mean into a matplotlib histogram
+                
+                
+
+                 #if len(meanedges) > 1 else meanedges[0]
+                 #if len(stdedges) > 1 else stdedges[0]
 
                 mask = (frm_mean < mean_thresh) & (frm_stddev < stddev_thresh)
 
-                low_frames = stack [:, :, mask]
+                
 
                 if low_frames.shape[2] > 0:
                     avg_low = np.mean(low_frames, axis =2).astype(np.uint16)
@@ -164,7 +182,8 @@ for item in file_info_sorted:
                     avg_low = np.mean(stack, axis=2).astype(np.uint16)
 
                 stack =  stack - avg_low[:, :, None] '''
-                # correction is weird with python don't know why... it looks snow white when used :\
+
+                # correction is weird with python don't know why... it looks snow white when used
                 # -------------------------------------------------------------------------------------------------------
 
                 stack_clipped = np.clip(stack, 0, 65535).astype(np.uint16)
