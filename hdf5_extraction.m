@@ -173,9 +173,9 @@ for file=filelist'
             % stddev_counts = histogram(frm_stddev, numfrms/4);
             % stddev_thresh = stddev_counts.BinEdges(2);
             
-            [mcount, meanedges] =histcounts(frm_mean, floor(numfrms/4));
+            [mcount, meanedges] =histcounts(frm_mean, numfrms/4);
             mean_thresh = meanedges(2);
-            [scount, stdedges] =histcounts(frm_stddev, floor(numfrms/4));
+            [scount, stdedges] =histcounts(frm_stddev, numfrms/4);
             stddev_thresh = stdedges(2);
 
             low_frms = stack(:,:, frm_mean < mean_thresh & frm_stddev < stddev_thresh);

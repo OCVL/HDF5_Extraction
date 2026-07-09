@@ -7,15 +7,11 @@ import cv2
 
 import h5py
 import numpy as np
-import skimage
 import tifffile
 
-import imageio.v2 as imageio
 from skimage.transform import resize
 import datetime
-
-#initialize vid counter
-
+import matplotlib.pyplot as plt
 
 #prompt user to locate folder
 folder = askdirectory()
@@ -136,8 +132,8 @@ for item in file_info_sorted:
 
                     gray_frame = msb + lsb
 
-                    gray_frame = gray_frame[8:, :]  #now (472, 640)
                     gray_frame = np.flipud(gray_frame)  # equivilant to the rotate code in matlab
+                    gray_frame = gray_frame[0:Initial_height, :]  #now (472, 640)
 
                     frame_rescaled = resize(gray_frame, (Target_height, Width), preserve_range = True).astype(np.uint16)  #optional might remove?
 
@@ -145,80 +141,55 @@ for item in file_info_sorted:
 
                     stack[:, :, c] = frame_rescaled
 
-                    frm_mean[c] = np.mean(gray_frame)
-                    frm_stddev[c] = np.std(gray_frame.astype(float))
+                    #gray_frame480 = resize(gray_frame, (Target_height, Width), preserve_range=True).astype(np.uint16)
+                    #gray_frame = gray_frame.astype(np.uint64)
+                    frm_mean[c] = np.nanmean(gray_frame)
+                    frm_stddev[c] = np.std(gray_frame)
 
                 #-------------------------------------------------------------------------------------------------------
                 #Need to fix this to correct frames...
                 #import matplotlib.pyplot as plt
 
 
-                mcount, meanedges = np.histogram(frm_mean, bins= num_frames // 4)
+                mcount, meanedges = np.histogram(frm_mean, bins=int(np.divide(num_frames, 4)))
                 mean_thresh = meanedges[1]
-                scount, stdedges = np.histogram(frm_stddev, bins= num_frames // 4)
+                scount, stdedges = np.histogram(frm_stddev, bins=int(np.divide(num_frames, 4)))
                 stddev_thresh = stdedges[1]
 
                 low_frames = stack[:, :, (frm_mean < mean_thresh) & (frm_stddev < stddev_thresh)]
 
-                avg_low = np.mean(low_frames,2).astype(np.uint16)
-                stack = stack - avg_low[:, :, None]
+                avg_low = np.nanmean(low_frames, axis=2).astype(np.uint16)
 
-                #commented out
-                '''
-                #matplotlib - load frm_mean into a matplotlib histogram
-                
-                
+                # normalizing the stack -- Brea's beautiful work
+                # plt.figure(1)
+                norm_stack = np.zeros_like(stack)
+                stack_8bit = np.zeros_like(stack)
 
-                 #if len(meanedges) > 1 else meanedges[0]
-                 #if len(stdedges) > 1 else stdedges[0]
+                for i in range(0, num_frames):
 
-                mask = (frm_mean < mean_thresh) & (frm_stddev < stddev_thresh)
+                    # Subtract avg_low from frame and save in new stack
+                    temp = stack[:, :, i].astype(np.int16) - avg_low.astype(np.int16)
+                    amin = np.min(temp)  # min value of stack
+                    min_t = temp - amin
+                    amax = np.max(min_t)  #max value of stack
+                    max_t = min_t / amax  #
 
-                
-
-                if low_frames.shape[2] > 0:
-                    avg_low = np.mean(low_frames, axis =2).astype(np.uint16)
-                else:
-                    avg_low = np.mean(stack, axis=2).astype(np.uint16)
-
-                stack =  stack - avg_low[:, :, None] '''
-
-                # correction is weird with python don't know why... it looks snow white when used
-                # -------------------------------------------------------------------------------------------------------
-
-                stack_clipped = np.clip(stack, 0, 65535).astype(np.uint16)
-                stack_8bit = (stack_clipped / 256).astype(np.uint8)
+                    norm_stack[:, :, i] = (max_t * 65535).astype(np.uint16)
+                    stack_8bit[:, :, i] = (max_t * 255).astype(np.uint8) # normalized into an int 8
+                    # plt.imshow(norm_stack[:, :, i], cmap='gray')
+                    # plt.waitforbuttonpress()
 
 
-                # -------------------------------------------------------------------------------------------------------
-                '''stack_rescaled = np.zeros_like(stack_8bit)
-                for c in range(num_frames):
-                    stack_rescaled[:, :, c] = resize(
-                        stack_8bit[:, :, c],
-                        (Target_height, Width),
-                        preserve_range = True
-                    ).astype(np.uint8)'''
-                #double purpose I think... no needed for now...
-                # -------------------------------------------------------------------------------------------------------
-
-                stack_rescaled = stack_8bit.copy()
-                #tif_name = file_name.replace(".tif", "v1.tif")
                 # -------------------------
                 # forming the TIFF file
                 # -------------------------
                 with tifffile.TiffWriter(file_name) as tif:
                     for ii in range(stack.shape[2]):
-                        # stack_clipped = resize(
-                        #     stack[:, :,ii],
-                        #     (Target_height, Width),
-                        #     preserve_range=True
-                        # ).astype(np.uint16)
-
                         tif.write(
-                            stack_clipped[:,:,ii],
+                            norm_stack[:,:,ii],
                             photometric="minisblack",
                             compression = None,
-                            planarconfig= "contig",
+                            #planarconfig= "contig",
                             dtype = np.uint16
                         )
 
