@@ -135,7 +135,7 @@ for item in file_info_sorted:
                     gray_frame = np.flipud(gray_frame)  # equivilant to the rotate code in matlab
                     gray_frame = gray_frame[0:Initial_height, :]  #now (472, 640)
 
-                    frame_rescaled = resize(gray_frame, (Target_height, Width), preserve_range = True).astype(np.uint16)  #optional might remove?
+                    frame_rescaled = resize(gray_frame, (Target_height, Width), preserve_range = True).astype(np.uint16)
 
                     #frame_rescaled = skimage.transform.rotate(frame_rescaled, 90)
 
@@ -150,7 +150,6 @@ for item in file_info_sorted:
                 #Need to fix this to correct frames...
                 #import matplotlib.pyplot as plt
 
-
                 mcount, meanedges = np.histogram(frm_mean, bins=int(np.divide(num_frames, 4)))
                 mean_thresh = meanedges[1]
                 scount, stdedges = np.histogram(frm_stddev, bins=int(np.divide(num_frames, 4)))
@@ -160,28 +159,32 @@ for item in file_info_sorted:
 
                 avg_low = np.nanmean(low_frames, axis=2).astype(np.uint16)
 
+                norm_stack  = stack.astype(int) - avg_low[:,:, None].astype(int)
+                norm_stack[norm_stack < 0] = 0
+                #a_min = np.amin(temp.astype(np.int16))  # min value of stack
+                # min_t = temp - a_min
+                # a_max = np.amax(min_t.astype(np.int16))  # max value of stack
+                # max_t = min_t / a_max
+                norm_stack = norm_stack.astype(np.uint16)
+                stack_8bit = norm_stack.astype(np.uint8)
+
                 # normalizing the stack -- Brea's beautiful work
-                # plt.figure(1)
-                norm_stack = np.zeros_like(stack)
-                stack_8bit = np.zeros_like(stack)
-
-                for i in range(0, num_frames):
-
-                    # Subtract avg_low from frame and save in new stack
-                    temp = stack[:, :, i].astype(np.int16) - avg_low.astype(np.int16)
-                    amin = np.min(temp)  # min value of stack
-                    min_t = temp - amin
-                    amax = np.max(min_t)  #max value of stack
-                    max_t = min_t / amax  #
-
-                    norm_stack[:, :, i] = (max_t * 65535).astype(np.uint16)
-                    stack_8bit[:, :, i] = (max_t * 255).astype(np.uint8) # normalized into an int 8
-                    # plt.imshow(norm_stack[:, :, i], cmap='gray')
-                    # plt.waitforbuttonpress()
+                # norm_stack = np.zeros_like(stack)
+                # stack_8bit = np.zeros_like(stack)
+                #
+                # for i in range(0, num_frames):
+                #     # Subtract avg_low from frame and save in new stack
+                #     temp = stack[:, :, i].astype(np.int16) - avg_low.astype(np.int16)
+                #     a_min = np.amin(temp)  # min value of stack
+                #     min_t = temp - a_min
+                #     a_max = np.amax(min_t)  # max value of stack
+                #     max_t = min_t / a_max
+                #     norm_stack[:, :, i] = (max_t * 65535).astype(np.uint16)
+                #     stack_8bit[:, :, i] = (max_t * 255).astype(np.uint8)
 
 
                 # -------------------------
-                # forming the TIFF file
+                # Forming the TIFF file
                 # -------------------------
                 with tifffile.TiffWriter(file_name) as tif:
                     for ii in range(stack.shape[2]):
@@ -189,37 +192,28 @@ for item in file_info_sorted:
                             norm_stack[:,:,ii],
                             photometric="minisblack",
                             compression = None,
-                            #planarconfig= "contig",
+                            planarconfig= "contig",
                             dtype = np.uint16
                         )
 
-
-                # print(stack.shape)
-                # frame_list = np.empty((stack.shape[0], stack.shape[1], stack.shape[2]))
-                # print("frame list", frame_list)
-                # for aa in range(stack.shape[2]):
-                #     frame_list[:, :, aa] = stack[:, :, aa]
-                #
-                # cv2.imwritemulti(str(tif_name), frame_list.astype(np.uint16))
-
                 # -------------------------
-                #Forming the AVI file
+                # Forming the AVI file
                 # -------------------------
 
                 #Quantization
-                quants = np.quantile(stack.flatten(), [0.001, 0.999])
-                stack_norm = stack.astype(float)
-                stack_norm = stack_norm - quants[0]
-                stack_norm = stack_norm / (quants[1] - quants[0])
-                stack_8bit = np.clip(stack_norm * 255, 0, 255).astype(np.uint8)
+                #quants = np.quantile(stack.flatten(), [0.001, 0.999])
+                stack_norm = norm_stack.astype(float)
+                stack_8bit = stack_norm /2047
+                stack_8bit = (stack_8bit * 255).astype(np.uint8)
 
+                #stack_norm = stack_norm - quants[0]
+                #stack_norm = stack_norm / (quants[1] - quants[0])
+                #stack_8bit = np.clip(stack_norm * 255, 0, 255).astype(np.uint8)
+                # find 2^11... divide stack by that... and multiple by 255
                 # alternate avi formating for saving - test
-                #video_data = cv2.VideoCapture(file_name)
                 avi_name = file_name.replace(".tif", ".avi")
 
                 # Get the number of frames in the video pairs
-                #frate = video_data.get(cv2.CAP_PROP_FPS) # get frame rate using HDF5 file
-
                 # Make the video writer
                 code = cv2.VideoWriter.fourcc(*'Y800')
                 avi_output = cv2.VideoWriter(avi_name, code, 30, (Width, Target_height), isColor=False)
@@ -228,24 +222,3 @@ for item in file_info_sorted:
                     avi_output.write(stack_8bit[:, :, i].astype(np.uint8))
 
                 avi_output.release()
-              
-                # #AVI File formatting
-                # avi_name = file_name.replace(".tif", ".avi")
-                # writer = imageio.get_writer(
-                #     avi_name,
-                #     fps=30,
-                #     format="FFMPEG",
-                #     codec = "mjpeg",
-                #     macro_block_size = 1
-                # )
-                #
-                # for ii in range(stack_8bit.shape[2]):
-                #     frame_rescaled = resize(
-                #         stack_8bit[:, :, ii],
-                #         (Target_height, Width),
-                #         preserve_range=True
-                #     ).astype(np.uint8)
-                #     writer.append_data(frame_rescaled)
-                #
-                # writer.close()
-                #

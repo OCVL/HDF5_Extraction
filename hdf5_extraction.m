@@ -1,4 +1,4 @@
-% HDF5 data extractor
+    % HDF5 data extractor
 % Created by: Jenna Grieshop
 % Date created: 3/29/2023
 %

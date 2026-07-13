@@ -1,4 +1,4 @@
-% HDF5 data extractor
+    % HDF5 data extractor
 % Created by: Jenna Grieshop
 % Date created: 3/29/2023
 %
@@ -99,7 +99,7 @@ for file=filelist'
                 numfrms = str2double(valcontents{countind}); % number of frames as double
                                 
                 % initialize everything needed to write the tiff stack
-                subject_id = strrep(subject_id, ':', ' ');
+                subject_id = strrep(subject_id, ':', '');
                 if(notes_success)
                     file_name = [thisfolder, '\', subject_id, '_', string(date), '_', eye, '_', num2str(vid_count), '.tif'];
                     file_name = strjoin(file_name, '');
@@ -210,7 +210,7 @@ for file=filelist'
             open(writer);
             for ii=1:size(stack,3)
                 writeVideo(writer, imresize(stack(:,:,ii), [TARGET_RESCALED_HEIGHT, WIDTH ]));
-            end
+              end
             close(writer);
         end
     end
