@@ -52,7 +52,8 @@ for item in file_info_sorted:
             notes_data = f["Notes"]["Value"][:]
             notes_string = b''.join(notes_data).decode()
             notes_split =  notes_string.split('"')
-            subject_ID = notes_split[11]           #MatLab indicated subject ID may be at idex 32 instead of 12 with larger note fields
+            subject_ID = notes_split[21]           #MatLab indicated subject ID may be at idex 32 instead of 12 with larger note fields
+            vid_info = notes_split[11]
             notes_success = 1                      #Might try an if statement to address this if applicable
 
             if subject_ID == "notes":
@@ -101,7 +102,7 @@ for item in file_info_sorted:
 
                     # creating file names
                     if notes_success:
-                        file_name = f"{folder}/{subject_ID}_{date_string}_{eye}_{b}.tif"
+                        file_name = f"{folder}/{vid_info}_session_subject_{subject_ID}_{date_string}_{eye}_{b}.tif"
                     else:
                         file_name = f"{folder}/{date_string}_{eye}_{b}.tif"
 
