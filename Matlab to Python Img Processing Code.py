@@ -19,6 +19,7 @@ fPaths = glob.glob(os.path.join(folder, "*.hdf5"))
 
 #reading/storing HDF5 metadata
 file_info = []
+vid_count = -1
 
 # extraxt filename and timestamp from each file and order chronologically
 for fp in fPaths:
@@ -40,11 +41,10 @@ file_info_sorted = sorted(file_info, key=lambda x: x["timestamp"])  # sort list 
 #main loop for loading files in
 
 for item in file_info_sorted:
-    vid_count = -1
     fp = item["path"]
     filename = item["filename"]
     date_timestamp = os.path.getmtime(fp)
-    date_string = datetime.datetime.fromtimestamp(date_timestamp).strftime("%Y_%m_%d")
+    date_string = datetime.datetime.fromtimestamp(date_timestamp).strftime("%Y%m%d")
 
     #attempt to get notes from the file to obtain subject_ID
     with h5py.File(fp, 'r') as f:
@@ -53,7 +53,6 @@ for item in file_info_sorted:
             notes_string = b''.join(notes_data).decode()
             notes_split =  notes_string.split('"')
             subject_ID = notes_split[21]           #MatLab indicated subject ID may be at idex 32 instead of 12 with larger note fields
-            vid_info = notes_split[11]
             notes_success = 1                      #Might try an if statement to address this if applicable
 
             if subject_ID == "notes":
@@ -65,7 +64,7 @@ for item in file_info_sorted:
             notes_success = 0
 
         #dimension for the tiff and avi files
-        Initial_height = 472
+        Initial_height = 448
         Width = 640
         square_aspect = Width/480
         Target_height = round(Initial_height * square_aspect)
@@ -102,7 +101,7 @@ for item in file_info_sorted:
 
                     # creating file names
                     if notes_success:
-                        file_name = f"{folder}/{vid_info}_session_subject_{subject_ID}_{date_string}_{eye}_{b}.tif"
+                        file_name = f"{folder}/{subject_ID}_{date_string}_{eye}_(2.5,0)_5x5_{vid_count}_Confocal.tif"
                     else:
                         file_name = f"{folder}/{date_string}_{eye}_{b}.tif"
 
@@ -134,7 +133,7 @@ for item in file_info_sorted:
                     gray_frame = msb + lsb
 
                     gray_frame = np.flipud(gray_frame)  # equivilant to the rotate code in matlab
-                    gray_frame = gray_frame[0:Initial_height, :]  #now (472, 640)
+                    gray_frame = gray_frame[0:Initial_height, :]  #now (468, 640)
 
                     frame_rescaled = resize(gray_frame, (Target_height, Width), preserve_range = True).astype(np.uint16)
 
