@@ -11,7 +11,7 @@ import tifffile
 
 from skimage.transform import resize
 import datetime
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 #prompt user to locate folder
 folder = askdirectory()
@@ -52,7 +52,7 @@ for item in file_info_sorted:
             notes_data = f["Notes"]["Value"][:]
             notes_string = b''.join(notes_data).decode()
             notes_split =  notes_string.split('"')
-            subject_ID = notes_split[21]           #MatLab indicated subject ID may be at idex 32 instead of 12 with larger note fields
+            subject_ID = notes_split[21]           #MatLab indicated subject ID may be at index 32 instead of 12 with larger note fields
             notes_success = 1                      #Might try an if statement to address this if applicable
 
             if subject_ID == "notes":
@@ -132,7 +132,7 @@ for item in file_info_sorted:
 
                     gray_frame = msb + lsb
 
-                    gray_frame = np.flipud(gray_frame)  # equivilant to the rotate code in matlab
+                    gray_frame = np.flipud(gray_frame)  # equivalent to the rotate code in matlab
                     gray_frame = gray_frame[0:Initial_height, :]  #now (468, 640)
 
                     frame_rescaled = resize(gray_frame, (Target_height, Width), preserve_range = True).astype(np.uint16)
@@ -161,13 +161,14 @@ for item in file_info_sorted:
 
                 norm_stack  = stack.astype(int) - avg_low[:,:, None].astype(int)
                 norm_stack[norm_stack < 0] = 0
+
+                norm_stack = norm_stack.astype(np.uint16)
+                stack_8bit = norm_stack.astype(np.uint8)
+
                 #a_min = np.amin(temp.astype(np.int16))  # min value of stack
                 # min_t = temp - a_min
                 # a_max = np.amax(min_t.astype(np.int16))  # max value of stack
                 # max_t = min_t / a_max
-                norm_stack = norm_stack.astype(np.uint16)
-                stack_8bit = norm_stack.astype(np.uint8)
-
                 # normalizing the stack -- Brea's beautiful work
                 # norm_stack = np.zeros_like(stack)
                 # stack_8bit = np.zeros_like(stack)
@@ -209,16 +210,39 @@ for item in file_info_sorted:
                 #stack_norm = stack_norm - quants[0]
                 #stack_norm = stack_norm / (quants[1] - quants[0])
                 #stack_8bit = np.clip(stack_norm * 255, 0, 255).astype(np.uint8)
-                # find 2^11... divide stack by that... and multiple by 255
+                # find 2^11... divide stack by that... and multiply by 255
                 # alternate avi formating for saving - test
                 avi_name = file_name.replace(".tif", ".avi")
 
+                height = stack_8bit.shape[0]
+                width = stack_8bit.shape[1]
+
                 # Get the number of frames in the video pairs
                 # Make the video writer
-                code = cv2.VideoWriter.fourcc(*'Y800')
-                avi_output = cv2.VideoWriter(avi_name, code, 30, (Width, Target_height), isColor=False)
+                import av
 
-                for i in range(0, stack.shape[-1]):
-                    avi_output.write(stack_8bit[:, :, i].astype(np.uint8))
+                with av.open(avi_name, "w", "avi") as container:
+                    stream = container.add_stream("rawvideo", rate = 30)
+                    stream.width = width
+                    stream.height = height
+                    stream.pix_fmt = 'gray8'
 
-                avi_output.release()
+                    for i in range(0, stack_8bit.shape[-1]):
+                        frame = av.VideoFrame.from_ndarray(stack_8bit[:, :, i], format = "gray")
+                        for packet in stream.encode(frame):
+                            container.mux(packet)
+                    #flush stream
+                    for packet in stream.encode():
+                        container.mux(packet)
+
+                #close the file
+                container.close()
+
+
+                # code = cv2.VideoWriter.fourcc(*'Y800')
+                # avi_output = cv2.VideoWriter(avi_name, code, 30, (width, height), isColor=False)
+                #
+                # for i in range(0, stack_8bit.shape[-1]):
+                #     avi_output.write(stack_8bit[:, :, i].astype(np.uint8))
+                #
+                #   avi_output.release()
