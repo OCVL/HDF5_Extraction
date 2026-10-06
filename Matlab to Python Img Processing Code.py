@@ -63,6 +63,15 @@ for item in file_info_sorted:
             print(f"Notes Field failed for file: {fp}")
             notes_success = 0
 
+        if "Control Session" in notes_string:
+            vid_type = "control"
+        elif "Stimulus Session" in notes_string:
+            vid_type = "stimulus"
+        else:
+            vid_type = "other/notfound"
+        print(f"the vid type is {vid_type}")
+        print(notes_split)
+
         #dimension for the tiff and avi files
         Initial_height = 448
         Width = 640
@@ -101,9 +110,9 @@ for item in file_info_sorted:
 
                     # creating file names
                     if notes_success:
-                        file_name = f"{folder}/{subject_ID}_{date_string}_{eye}_(2.5,0)_5x5_{vid_count}_Confocal.tif"
+                        file_name = f"{folder}/{subject_ID}_{date_string}_{eye}_(2.5,0)_5x5_{vid_count}_Confocal_{vid_type}.tif"
                     else:
-                        file_name = f"{folder}/{date_string}_{eye}_{b}.tif"
+                        file_name = f"{folder}/{date_string}_{eye}_{b}_.tif"
 
                 except Exception:
                     vid_count -= 1

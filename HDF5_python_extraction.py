@@ -43,7 +43,7 @@ def extract_subject_ID(fp):
             notes_data = f["Notes"]["Value"][()]
             notes_string = b''.join(notes_data).decode()
             notes_split =  notes_string.split('"')
-            subject_ID = notes_split[11]          #MatLab indicated subject ID may be at idex 32 instead of 12 with larger note fields
+            subject_ID = notes_split[21]          #MatLab indicated subject ID may be at idex 32 instead of 12 with larger note fields
             notes_success = 1                           #Might try an if statement to address this if applicable
 
             if subject_ID == "notes":
@@ -55,11 +55,7 @@ def extract_subject_ID(fp):
         print(f"Notes Field failed for file: {fp}")
         notes_success = 0
         return None
-def loop_eyes():
-    return [0, 1] #OD, OS
 
-def loop_vid():
-    return [0, 1, 2]
 
 def loop_frame(num_frames):
     return range(num_frames)
