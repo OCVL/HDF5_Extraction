@@ -70,7 +70,6 @@ for item in file_info_sorted:
         else:
             vid_type = "other/notfound"
         print(f"the vid type is {vid_type}")
-        print(notes_split)
 
         #dimension for the tiff and avi files
         Initial_height = 448
